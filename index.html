@@ -86,6 +86,14 @@
     border:none;border-radius:50%;background:rgba(255,252,245,.85);color:var(--ink);
     font-size:16px;cursor:pointer;opacity:0;transition:opacity .3s}
   .portal.show .replay{opacity:.85}
+  /* shown only when the browser refuses to autoplay a film that has sound */
+  .portal.needs-tap::after{content:'\25B6';position:absolute;left:50%;top:50%;
+    width:74px;height:74px;margin:-37px 0 0 -37px;border-radius:50%;
+    background:rgba(255,252,245,.92);color:var(--ink);font-size:26px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 26px rgba(35,41,70,.28);pointer-events:none;
+    animation:tapPulse 1.6s ease-in-out infinite}
+  @keyframes tapPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 
   /* finale QR card */
   .qrcard{display:flex;align-items:center;gap:18px;margin-top:24px;

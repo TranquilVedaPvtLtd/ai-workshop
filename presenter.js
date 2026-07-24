@@ -29,7 +29,8 @@
   var layerVideo = document.createElement('div'); layerVideo.className = 'layer';
   var copyEl = document.createElement('div'); copyEl.className = 'copy';
   var portal = document.createElement('div'); portal.className = 'portal';
-  portal.innerHTML = '<video muted playsinline preload="auto"></video>' +
+  portal.innerHTML = '<video muted playsinline preload="auto" ' +
+    'poster="assets/demos/welcome-poster.jpg"></video>' +
     '<div class="pcap"></div><button class="replay" title="replay">&#8635;</button>';
   var rail = document.createElement('div'); rail.className = 'rail';
   var clock = document.createElement('div'); clock.className = 'clock'; clock.textContent = '0:00';
@@ -152,13 +153,40 @@
       pcap.textContent = t.pcap || '';
       portal.classList.add('show');
       pvid.muted = !w.portal.sound;
-      try { pvid.currentTime = 0; var p = pvid.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+      playPortal();
     } else {
       portal.classList.remove('show');
       portal.style.pointerEvents = 'none';
       try { pvid.pause(); } catch (e) {}
     }
   }
+
+  // A film that carries sound cannot autoplay before the page has had a user
+  // gesture, so waypoint 0 would otherwise sit on a black frame until someone
+  // clicks. Try to play; if the browser refuses, mark the portal so the play
+  // affordance shows, and retry on the presenter's very next key or click.
+  var pendingPlay = false;
+  function playPortal() {
+    try { pvid.currentTime = 0; } catch (e) {}
+    var p = pvid.play();
+    if (p && p.catch) {
+      p.catch(function () {
+        portal.classList.add('needs-tap');
+        pendingPlay = true;
+      });
+    }
+  }
+  function retryPending() {
+    if (!pendingPlay) return;
+    pendingPlay = false;
+    var w = WP[current];
+    if (!w || !w.portal) return;
+    var p = pvid.play();
+    if (p && p.then) p.then(function () { portal.classList.remove('needs-tap'); },
+                            function () { pendingPlay = true; });
+  }
+  window.addEventListener('keydown', retryPending, true);
+  window.addEventListener('pointerdown', retryPending, true);
 
   replayBtn.addEventListener('click', function (e) {
     e.stopPropagation();
