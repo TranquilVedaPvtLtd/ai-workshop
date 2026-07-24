@@ -1,5 +1,5 @@
-/* AI Workshop deck — 14 waypoints, bilingual (mr default / en), portals for
- * silent screen demos + the Shruti welcome film. Consumed by presenter.js. */
+/* AI Workshop deck — 13 waypoints, bilingual (mr default / en), portal for
+ * the Shruti welcome film; ChatGPT/voice/NotebookLM slides are live demos. */
 window.DECK = {
   legs: [
     'assets/vid/leg01.mp4', 'assets/vid/leg02.mp4', 'assets/vid/leg03.mp4',
@@ -56,61 +56,42 @@ window.DECK = {
         cue: 'Remove the fear — everyone already uses AI daily. Now we use it deliberately.' }
     },
     {
-      pos: { leg: 3, t: 1 }, scene: 4, accent: '#2E8A87',
-      portal: { src: 'assets/demos/chatgpt-letter.mp4' },
-      mr: { chip: 'रोजची कामं', head: 'पत्र, अर्ज, भाषांतर — काही सेकंदात.',
-        sub: 'मराठीत सांगा — तयार उत्तर मिळतं. समोर प्रत्यक्ष पहा.',
-        pcap: 'ChatGPT — मराठी अर्ज, आत्ता लिहिला जातोय',
-        cue: 'डेमो चालू असताना बोला: बँक तक्रार, सोसायटी पत्र, शाळेचा अर्ज — रोजची कामं.' },
-      en: { chip: 'Daily tasks', head: 'Letters, applications, translation — in seconds.',
-        sub: 'Ask in Marathi — get a ready draft. Watch it happen live.',
-        pcap: 'ChatGPT — a Marathi application, being written now',
-        cue: 'Talk over the demo: bank complaint, society letter, school application.' }
-    },
-    {
       pos: { leg: 4, t: 1 }, scene: 5, accent: '#3D4A8F',
-      portal: { src: 'assets/demos/chatgpt-tips.mp4' },
       mr: { chip: 'पुढची पातळी', head: 'ChatGPT च्या युक्त्या — ज्या फार कमी जणांना माहीत आहेत.',
-        receipt: ['फोटो काढा आणि प्रश्न विचारा', 'तुमची माहिती कायम लक्षात ठेवायला सांगा', 'माणसाशी बोलता तसं बोला — काम, कोणासाठी, किती मोठं'],
-        pcap: 'ChatGPT — फोटोवरून प्रश्न',
-        cue: 'Tips block: फोटो प्रश्न, memory, प्रॉम्प्टचं सूत्र. प्रेक्षकांकडून एक काम मागा!' },
+        receipt: ['आजची खास युक्ती — प्रत्यक्ष माझ्या स्क्रीनवर, live', 'तुमच्या व्यवसायाचा LOGO — काही मिनिटांत', 'हिशोबाची Excel फाईल द्या — विश्लेषण, चार्ट, अहवाल तयार', 'Scheduled Tasks — रोज ठरल्या वेळी ChatGPT स्वतःहून काम करून पाठवतो'],
+        cue: 'Live screen: reel-वाली युक्ती दाखवा. मग LOGO, Excel विश्लेषण, Tasks. प्रेक्षकांकडून एक काम मागा!' },
       en: { chip: 'Next level', head: 'ChatGPT tricks — that very few people know.',
-        receipt: ['Snap a photo and ask about it', 'Tell it to remember your details', 'Talk like you talk to a person — task, audience, length'],
-        pcap: 'ChatGPT — asking about a photo',
-        cue: 'Tips block: photo questions, memory, the prompt formula. Take a live request!' }
+        receipt: ['Today\'s special trick — live on my screen', 'Your business LOGO — in minutes', 'Hand it your accounts Excel — analysis, charts, reports ready', 'Scheduled Tasks — ChatGPT does a job for you at a fixed time, daily'],
+        cue: 'Live screen: show the reel trick. Then LOGO, Excel analysis, Tasks. Take a live request!' }
     },
     {
       pos: { leg: 5, t: 1 }, scene: 6, accent: '#E07856',
-      portal: { src: 'assets/demos/voice-tutor.mp4' },
       mr: { chip: 'तुमचा शिक्षक', head: 'कोणताही विषय — बोलून शिका.',
         sub: 'ChatGPT Voice शी सरळ गप्पा मारा. तो शिकवतो, प्रश्न विचारतो, पुन्हा समजावतो — न थकता.',
-        pcap: 'ChatGPT Voice — संभाषणातून शिकवणी',
-        cue: 'मुलांचा अभ्यास, स्पर्धा परीक्षा, नवीन कौशल्य — घरचा शिक्षक. full-duplex आवाज.' },
+        cue: 'LIVE DEMO फोनवर: ChatGPT Voice शी मराठीत गप्पा. मुलांचा अभ्यास, स्पर्धा परीक्षा, नवीन कौशल्य.' },
       en: { chip: 'Your tutor', head: 'Any subject — learn by talking.',
         sub: 'Just converse with ChatGPT Voice. It teaches, quizzes, re-explains — without tiring.',
-        pcap: 'ChatGPT Voice — teaching as a conversation',
-        cue: 'Kids homework, competitive exams, new skills — a tutor at home. Full-duplex voice.' }
+        cue: 'LIVE DEMO on the phone: chat with ChatGPT Voice in Marathi. Homework, exams, new skills.' }
     },
     {
       pos: { leg: 6, t: 1 }, scene: 7, accent: '#7B5EA7',
-      portal: { src: 'assets/demos/doc-teach.mp4' },
       mr: { chip: 'NotebookLM', head: 'तुमचं पुस्तक द्या — ते शिकवेल.',
         sub: 'कोणतीही PDF, नोट्स, पुस्तक — त्यातून धडे, प्रश्नोत्तरं, अगदी podcast सुद्धा. फुकट.',
-        pcap: 'AI — तुमच्या मजकुरातून धडे आणि प्रश्नमंजुषा, प्रत्यक्ष',
         cue: 'शेतकरी योजना PDF, अभ्यासक्रम, करार — जे तुमचं आहे त्यावर AI. Google चं, मोफत.' },
       en: { chip: 'NotebookLM', head: 'Give it your book — it will teach you.',
         sub: 'Any PDF, notes, book — lessons, Q&A, even a podcast from it. Free.',
-        pcap: 'AI teaching from your own text, live',
         cue: 'A scheme PDF, a syllabus, a contract — AI over YOUR documents. By Google, free.' }
     },
     {
       pos: { leg: 7, t: 1 }, scene: 8, accent: '#C2447E',
-      mr: { chip: 'AI निर्माण करतो', head: 'हे संपूर्ण presentation AI ने बनवलं आहे.',
+      mr: { chip: 'AI निर्माण करतो', head: 'हे संपूर्ण presentation Claude Code ने बनवलं आहे.',
         sub: 'प्रत्येक चित्र, प्रत्येक दृश्य, हा संपूर्ण कागदी प्रवास — आणि हो, सुरुवातीची श्रुती सुद्धा.',
-        cue: 'थांबा. प्रेक्षकांना क्षण द्या. मग: फोटो, व्हिडिओ, जाहिराती, गाणी — सगळं आता शक्य आहे.' },
-      en: { chip: 'AI creates', head: 'This entire presentation was made by AI.',
+        receipt: ['LinkedIn पोस्ट, Reels — संपूर्ण social media आपोआप', 'Client साठी cinematic proposals — प्रत्यक्ष उदाहरण पाहू', 'अशा cinematic websites सुद्धा — हीच website त्याचं उदाहरण: ai.jarvisdaily.com'],
+        cue: 'थांबा, क्षण द्या. मग Swati Vaidya proposal LIVE दाखवा (bookmark तयार ठेवा). ही website सुद्धा Claude Code नेच बनवली.' },
+      en: { chip: 'AI creates', head: 'This entire presentation was made by Claude Code.',
         sub: 'Every image, every scene, this whole paper journey — and yes, the Shruti who welcomed you.',
-        cue: 'Pause. Let it land. Then: photos, films, ads, songs — all of it is now possible.' }
+        receipt: ['LinkedIn posts, Reels — your entire social media, automated', 'Cinematic client proposals — live example coming up', 'Cinematic websites too — this very site is one: ai.jarvisdaily.com'],
+        cue: 'Pause, let it land. Then show the Swati Vaidya proposal LIVE (keep the bookmark ready). This site too was built by Claude Code.' }
     },
     {
       pos: { leg: 8, t: 1 }, scene: 9, accent: '#5F9E54',
