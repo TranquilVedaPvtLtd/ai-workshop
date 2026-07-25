@@ -233,6 +233,10 @@
   // clicks. Try to play; if the browser refuses, mark the portal so the play
   // affordance shows, and retry on the presenter's very next key or click.
   var pendingPlay = false;
+  // The tap that resumes blocked playback must not ALSO reach the portal's
+  // mute-toggle below (pointerdown resumes with sound, the same tap's click
+  // then toggled muted back on - the "no sound until I tap twice" bug).
+  var gestureConsumed = false;
   function playPortal() {
     try { pvid.currentTime = 0; } catch (e) {}
     var p = pvid.play();
@@ -243,11 +247,15 @@
       });
     }
   }
-  function retryPending() {
+  function retryPending(e) {
     if (!pendingPlay) return;
     pendingPlay = false;
     var w = WP[current];
     if (!w || !w.portal) return;
+    if (e && e.type === 'pointerdown' && portal.contains(e.target)) {
+      gestureConsumed = true;
+      setTimeout(function () { gestureConsumed = false; }, 400);
+    }
     var p = pvid.play();
     if (p && p.then) p.then(function () { portal.classList.remove('needs-tap'); },
                             function () { pendingPlay = true; });
@@ -265,6 +273,7 @@
   // tapping the portal toggles sound on films that carry audio
   portal.addEventListener('click', function (e) {
     e.stopPropagation();
+    if (gestureConsumed) { gestureConsumed = false; return; }
     var w = WP[current];
     if (!w.portal || !w.portal.sound) return;
     pvid.muted = !pvid.muted;
