@@ -13,16 +13,19 @@
   var WP = DECK.wp;
 
   var TWEEN_PER_LEG = 2.4;   // seconds of real time to traverse one full leg
+  var PLAY_PER_LEG = 1.9;    // ditto for the play-through path (phones) - a touch snappier
+  var LEG_SECONDS = 5.04;    // nominal leg duration, used before metadata lands
   var WARN_SECONDS = 3000;   // presenter clock turns red at 50 min
 
   // ---------- state ----------
   var lang = /[?&]lang=en/.test(location.search) ? 'en' : 'mr';
   var current = 0;
-  var videosReady = false;
   var vids = [];
   var animating = false;
   var startedAt = null;
-  var loadedLegs = 0;
+  var rafId = null;          // desktop scrub tween
+  var playRaf = null;        // play-through segment watcher
+  var playVid = null;        // leg currently playing (phones)
 
   // A phone pays for every byte and stalls on parallel video fetches: the desktop
   // path pulls ~32 MB of legs in 13 concurrent requests plus a 21 MB welcome film,
@@ -33,6 +36,16 @@
   var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {};
   var SAVE_DATA = conn.saveData === true || /(^|-)2g$/.test(conn.effectiveType || '');
   var LIGHT = SAVE_DATA || window.matchMedia('(max-width: 820px)').matches;
+  var TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+  // Every leg is encoded as ONE keyframe followed by 120 predicted frames, so a
+  // rAF-driven currentTime scrub asks a phone to re-decode from frame 0 on every
+  // single tick - the origami simply never moves. Playing the leg is the exact
+  // opposite: forward sequential decode, which is what the hardware is for. So
+  // touch/small screens PLAY the leg (at a compressed rate to match the desktop
+  // tween's pace) and show the approved still at rest; the presenter's laptop
+  // keeps the proven scrub path.
+  var PLAYBACK = LIGHT || TOUCH;
 
   // ---------- dom ----------
   var root = document.getElementById('stage');
@@ -55,11 +68,30 @@
   var wpnum = document.createElement('div'); wpnum.className = 'wpnum';
   var help = document.createElement('div'); help.className = 'help';
   var langBtn = document.createElement('button'); langBtn.className = 'lang';
+
+  // Navigation affordance. Nobody arriving at a shared link knows a bare image is
+  // a 13-step deck, so the arrow is both the instruction and the control.
+  var nav = document.createElement('div'); nav.className = 'nav at-start';
+  nav.innerHTML =
+    '<button class="nb back" type="button" aria-label="back">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>' +
+    '<button class="nb next" type="button"><span class="nlab"></span>' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>';
+  // one-time coach line, touch only
+  var coach = document.createElement('div'); coach.className = 'coach';
+  coach.innerHTML = '<svg viewBox="0 0 24 14" aria-hidden="true">' +
+    '<path d="M22 7H3M8 2L3 7l5 5"/></svg><span class="clab"></span>';
+
   root.appendChild(layerStills); root.appendChild(layerVideo); root.appendChild(copyEl);
   root.appendChild(portal); root.appendChild(reels); root.appendChild(reelkeys);
   root.appendChild(rail); root.appendChild(clock);
   root.appendChild(cue); root.appendChild(wpnum); root.appendChild(help);
-  root.appendChild(langBtn);
+  root.appendChild(nav); root.appendChild(coach); root.appendChild(langBtn);
+
+  var navBack = nav.querySelector('.back');
+  var navNext = nav.querySelector('.next');
+  var navLabel = nav.querySelector('.nlab');
+  var coachLabel = coach.querySelector('.clab');
 
   var pvid = portal.querySelector('video');
   var pcap = portal.querySelector('.pcap');
@@ -72,6 +104,11 @@
   var HELP_TOUCH = {
     mr: 'पुढे जाण्यासाठी टॅप करा. मागे: उजवीकडे swipe.',
     en: 'Tap to advance. Swipe right to go back.'
+  };
+  var NEXT_LABEL = { mr: 'पुढे', en: 'Next' };
+  var COACH_LABEL = {
+    mr: 'स्वाइप करा किंवा बाणावर टॅप करा',
+    en: 'Swipe, or tap the arrow'
   };
 
   // stills layer (posters + fallback)
@@ -95,12 +132,9 @@
     v.src = URL.createObjectURL(blob);
     v.className = 'leg'; v.style.opacity = 0;
     layerVideo.appendChild(v); vids[i] = v;
-    loadedLegs++;
-    // Tweening BETWEEN waypoints needs the whole chain, so videosReady still
-    // means "all legs present". A leg that has just landed, though, should show
-    // straight away if we happen to be standing on it.
-    if (loadedLegs === LEGS.length) videosReady = true;
-    if (WP[current].pos.leg === i) syncToWaypoint(current, true);
+    // In PLAYBACK mode legs are only ever visible mid-transition, so a leg landing
+    // under our feet needs no repaint (and must not re-run the copy animation).
+    if (!PLAYBACK && WP[current].pos.leg === i) syncToWaypoint(current, true);
   }
   function fetchLeg(i) {
     return fetch(LEGS[i]).then(function (r) {
@@ -110,18 +144,45 @@
       attachLeg(i, b);
     }).catch(function () { /* stills-only mode still presents */ });
   }
+
+  // Which legs a hop between two chain positions actually traverses.
+  function legsBetween(from, to) {
+    var a = unflat(Math.min(from, to)).leg, b = unflat(Math.max(from, to)).leg, out = [];
+    for (var i = a; i <= b; i++) out.push(i);
+    return out;
+  }
+  // The old gate was "all 13 legs present", which on a phone loading serially is
+  // never true while anyone is actually watching - so every hop fell through to a
+  // hard still cut. A hop only ever needs ITS OWN legs.
+  function chainReady(from, to) {
+    return legsBetween(from, to).every(function (i) { return !!vids[i]; });
+  }
+
+  var pending = null, fetching = false;
+  // Fetch order follows the viewer, not the boot-time position: the leg the very
+  // next hop will play is always the one being downloaded.
+  function pumpLoad() {
+    if (!pending || fetching || !pending.length) return;
+    var want = [], k;
+    for (k = current; k < WP.length; k++) want.push(WP[k].pos.leg);
+    for (k = current - 1; k >= 0; k--) want.push(WP[k].pos.leg);
+    var pick = -1;
+    for (k = 0; k < want.length && pick < 0; k++) {
+      if (pending.indexOf(want[k]) >= 0) pick = want[k];
+    }
+    if (pick < 0) pick = pending[0];
+    pending.splice(pending.indexOf(pick), 1);
+    fetching = true;
+    fetchLeg(pick).then(function () { fetching = false; pumpLoad(); });
+  }
   function loadVideos() {
-    // Save-Data or 2G: never spend 32 MB of someone's plan on decoration.
+    // Save-Data or 2G: never spend 31 MB of someone's plan on decoration.
     if (SAVE_DATA) return;
     if (!LIGHT) { LEGS.forEach(function (_, i) { fetchLeg(i); }); return; }
-    // Phones: one leg at a time, so the stills and copy are never queued behind
-    // a dozen video downloads. Start from the leg we are actually standing on.
-    var order = LEGS.map(function (_, i) { return i; })
-      .sort(function (a, b) { return Math.abs(a - WP[current].pos.leg) - Math.abs(b - WP[current].pos.leg); });
-    (function nextLeg() {
-      if (!order.length) return;
-      fetchLeg(order.shift()).then(nextLeg);
-    })();
+    // Phones: one leg at a time, so stills and copy are never queued behind a
+    // dozen video downloads.
+    pending = LEGS.map(function (_, i) { return i; });
+    pumpLoad();
   }
 
   // ---------- rendering ----------
@@ -129,17 +190,30 @@
     stillEls.forEach(function (el, i) { el.style.opacity = i === idx ? 1 : 0; });
   }
   function setChain(pos) {
-    // No videosReady gate: legs arrive one at a time on phones, and any that is
+    // No readiness gate: legs arrive one at a time on phones, and any that is
     // present should be positioned. Missing ones are skipped and the still shows.
     vids.forEach(function (v, i) {
       if (!v) return;
       if (i === pos.leg) {
+        v.classList.remove('soft');
         v.style.opacity = 1;
-        var d = v.duration && isFinite(v.duration) ? v.duration : 5;
+        var d = v.duration && isFinite(v.duration) ? v.duration : LEG_SECONDS;
         try { v.currentTime = Math.max(0, Math.min(d - 0.033, pos.t * d)); } catch (e) {}
       } else {
         v.style.opacity = 0;
       }
+    });
+  }
+  // PLAYBACK at rest: no video on screen at all, just the approved still. This is
+  // what keeps a phone off the seek path entirely - the still IS the leg's final
+  // frame, so the handover is invisible. `.soft` matches the still's own fade so
+  // the crossfade has no dip through the cream background.
+  function restChain() {
+    vids.forEach(function (v) {
+      if (!v) return;
+      v.classList.add('soft');
+      v.style.opacity = 0;
+      try { v.pause(); } catch (e) {}
     });
   }
 
@@ -178,7 +252,12 @@
 
     // portal (demo film / welcome film)
     if (w.portal) {
-      if (pvid.getAttribute('src') !== w.portal.src) {
+      // The welcome film is 21 MB and carries sound, so a phone will refuse to
+      // autoplay it anyway - fetching it up front only starves the origami legs
+      // of the bandwidth they need. Hold it at the poster until it is tapped.
+      var deferred = LIGHT && !!w.portal.sound;
+      portal.dataset.src = w.portal.src;
+      if (!deferred && pvid.getAttribute('src') !== w.portal.src) {
         pvid.setAttribute('src', w.portal.src);
         pvid.load();
       }
@@ -187,12 +266,31 @@
       pcap.textContent = t.pcap || '';
       portal.classList.add('show');
       pvid.muted = !w.portal.sound;
-      playPortal();
+      if (deferred) { portal.classList.add('needs-tap'); pendingPlay = true; }
+      else playPortal();
     } else {
       portal.classList.remove('show');
+      portal.classList.remove('needs-tap');
       portal.style.pointerEvents = 'none';
+      pendingPlay = false;
       try { pvid.pause(); } catch (e) {}
     }
+  }
+
+  // ---- navigation affordance --------------------------------------------
+  function updateNav() {
+    nav.classList.toggle('at-start', current === 0);
+    nav.classList.toggle('at-end', current === WP.length - 1);
+  }
+  var coachTimer = null;
+  function showCoach() {
+    if (!TOUCH) return;
+    coach.classList.add('show');
+    coachTimer = setTimeout(hideCoach, 8000);
+  }
+  function hideCoach() {
+    if (coachTimer) { clearTimeout(coachTimer); coachTimer = null; }
+    coach.classList.remove('show');
   }
 
   // ---- reels overlay -----------------------------------------------------
@@ -237,7 +335,13 @@
   // mute-toggle below (pointerdown resumes with sound, the same tap's click
   // then toggled muted back on - the "no sound until I tap twice" bug).
   var gestureConsumed = false;
+  // Attach the deferred source the moment it is actually wanted.
+  function armPortal() {
+    var src = portal.dataset.src;
+    if (src && pvid.getAttribute('src') !== src) { pvid.setAttribute('src', src); pvid.load(); }
+  }
   function playPortal() {
+    armPortal();
     try { pvid.currentTime = 0; } catch (e) {}
     var p = pvid.play();
     if (p && p.catch) {
@@ -249,13 +353,19 @@
   }
   function retryPending(e) {
     if (!pendingPlay) return;
-    pendingPlay = false;
     var w = WP[current];
-    if (!w || !w.portal) return;
-    if (e && e.type === 'pointerdown' && portal.contains(e.target)) {
+    if (!w || !w.portal) { pendingPlay = false; return; }
+    // On a phone the film's source is still deferred, so a stray tap anywhere
+    // must not kick off a 21 MB download. Only a tap on the portal itself - the
+    // thing wearing the play glyph - starts it.
+    var onPortal = !!(e && e.target && portal.contains(e.target));
+    if (LIGHT && !onPortal) return;
+    pendingPlay = false;
+    if (e && e.type === 'pointerdown' && onPortal) {
       gestureConsumed = true;
       setTimeout(function () { gestureConsumed = false; }, 400);
     }
+    armPortal();
     var p = pvid.play();
     if (p && p.then) p.then(function () { portal.classList.remove('needs-tap'); },
                             function () { pendingPlay = true; });
@@ -293,24 +403,87 @@
 
   function syncToWaypoint(i, instant) {
     showStill(WP[i].scene);
-    setChain(WP[i].pos);
+    if (PLAYBACK) restChain(); else setChain(WP[i].pos);
     renderCopy(i, instant);
   }
 
+  // Any in-flight motion is abandoned the instant a new hop is asked for, so a
+  // swipe is never swallowed by a transition that is still running.
+  function stopMotion() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    if (playRaf) { cancelAnimationFrame(playRaf); playRaf = null; }
+    if (playVid) { try { playVid.pause(); } catch (e) {} playVid = null; }
+    animating = false;
+  }
+
+  // ---- play-through (phones) ---------------------------------------------
+  // Plays one leg's slice forward at a compressed rate instead of scrubbing it.
+  function playSegment(leg, t0, t1, rate, onDone) {
+    var v = vids[leg];
+    if (!v) { onDone(); return; }
+    var d = (v.duration && isFinite(v.duration) && v.duration > 0) ? v.duration : LEG_SECONDS;
+    var stopAt = Math.min(d - 0.02, t1 * d);
+    v.classList.remove('soft');
+    vids.forEach(function (x, i) { if (x) x.style.opacity = i === leg ? 1 : 0; });
+    try { v.currentTime = Math.max(0, Math.min(d - 0.033, t0 * d)); } catch (e) {}
+    v.playbackRate = Math.max(0.25, Math.min(4, rate));
+    playVid = v;
+    var p = v.play(); if (p && p.catch) p.catch(function () {});
+    (function watch() {
+      if (playVid !== v) return;                 // superseded by a newer hop
+      if (v.ended || v.currentTime >= stopAt) {
+        try { v.pause(); v.currentTime = stopAt; } catch (e) {}
+        playVid = null; playRaf = null;
+        onDone();
+        return;
+      }
+      playRaf = requestAnimationFrame(watch);
+    })();
+  }
+  function playThrough(from, to, i) {
+    var a = unflat(from), b = unflat(to), segs = [], L;
+    for (L = a.leg; L <= b.leg; L++) {
+      segs.push({ leg: L, t0: L === a.leg ? a.t : 0, t1: L === b.leg ? b.t : 1 });
+    }
+    segs = segs.filter(function (s) { return s.t1 - s.t0 > 0.01; });
+    if (!segs.length) { animating = false; syncToWaypoint(i, false); return; }
+    var span = segs.reduce(function (sum, s) { return sum + (s.t1 - s.t0); }, 0);
+    var target = Math.max(1.1, Math.min(3.4, span * PLAY_PER_LEG));
+    var rate = (span * LEG_SECONDS) / target;
+    var k = 0;
+    (function nextSeg() {
+      if (k >= segs.length) {
+        animating = false;
+        // The last frame and the still are the same picture, so the still is
+        // brought up behind and the frozen leg simply stays until the next hop.
+        showStill(WP[i].scene);
+        return;
+      }
+      var s = segs[k++];
+      playSegment(s.leg, s.t0, s.t1, rate, nextSeg);
+    })();
+  }
+
   function go(i) {
-    if (animating) return;
     i = Math.max(0, Math.min(WP.length - 1, i));
     if (i === current) return;
+    stopMotion();
     if (!startedAt && i > 0) startedAt = Date.now();
-    if (i > 0) help.classList.add('hide');
+    if (i > 0) { help.classList.add('hide'); hideCoach(); }
     var from = flat(WP[current].pos), to = flat(WP[i].pos);
     current = i;
-    if (!videosReady || from === to) {
+    updateNav();
+    pumpLoad();
+    // Video cannot run backwards, so a phone treats a back-hop as a still
+    // dissolve; the stills are the approved frames, so nothing is lost.
+    var reverse = PLAYBACK && to < from;
+    if (from === to || reverse || !chainReady(from, to)) {
       syncToWaypoint(i, false);
       return;
     }
     animating = true;
     renderCopy(i, false);
+    if (PLAYBACK) { playThrough(from, to, i); return; }
     var dist = Math.abs(to - from);
     var durMs = Math.max(1000, Math.min(3200, dist * TWEEN_PER_LEG * 1000));
     var t0 = performance.now();
@@ -318,10 +491,10 @@
       var u = Math.min(1, (now - t0) / durMs);
       var x = from + (to - from) * ease(u);
       setChain(unflat(x));
-      if (u < 1) { requestAnimationFrame(step); }
-      else { animating = false; showStill(WP[i].scene); }
+      if (u < 1) { rafId = requestAnimationFrame(step); }
+      else { rafId = null; animating = false; showStill(WP[i].scene); }
     }
-    requestAnimationFrame(step);
+    rafId = requestAnimationFrame(step);
   }
 
   // ---------- language ----------
@@ -329,7 +502,10 @@
     lang = next;
     document.documentElement.lang = lang;
     langBtn.textContent = lang === 'mr' ? 'English' : 'मराठी';
-    help.innerHTML = ('ontouchstart' in window) ? HELP_TOUCH[lang] : HELP[lang];
+    help.innerHTML = TOUCH ? HELP_TOUCH[lang] : HELP[lang];
+    navLabel.textContent = NEXT_LABEL[lang];
+    navNext.setAttribute('aria-label', NEXT_LABEL[lang]);
+    coachLabel.textContent = COACH_LABEL[lang];
     renderCopy(current, true);
   }
   langBtn.addEventListener('click', function (e) { e.stopPropagation(); setLang(lang === 'mr' ? 'en' : 'mr'); });
@@ -368,19 +544,28 @@
     if (swiped) { swiped = false; return; }
     next();
   });
+  navNext.addEventListener('click', function (e) { e.stopPropagation(); hideCoach(); next(); });
+  navBack.addEventListener('click', function (e) { e.stopPropagation(); hideCoach(); prev(); });
 
-  // touch: tap = advance, swipe right = back, swipe left = advance
-  var touchX = null, touchY = null, swiped = false;
+  // touch: tap = advance, swipe right = back, swipe left = advance.
+  // The old gate (50 px AND dx > dy x 1.5) rejected an ordinary thumb flick,
+  // which arcs upward - hence "one swipe does not move it". A quick flick now
+  // counts on distance OR speed, and only has to be more horizontal than vertical.
+  var touchX = null, touchY = null, touchT = 0, swiped = false;
   root.addEventListener('touchstart', function (e) {
     if (e.touches.length !== 1) return;
-    touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; swiped = false;
+    touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
+    touchT = e.timeStamp; swiped = false;
   }, { passive: true });
   root.addEventListener('touchend', function (e) {
     if (touchX === null) return;
     var dx = e.changedTouches[0].clientX - touchX;
     var dy = e.changedTouches[0].clientY - touchY;
+    var dt = e.timeStamp - touchT;
     touchX = touchY = null;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    var adx = Math.abs(dx), ady = Math.abs(dy);
+    var flick = dt < 320 && adx > 18;
+    if (adx > ady && (adx > 30 || flick)) {
       swiped = true;
       if (dx > 0) prev(); else next();
     }
@@ -397,5 +582,7 @@
   // boot
   setLang(lang);
   renderCopy(0, true);
+  updateNav();
   loadVideos();
+  setTimeout(showCoach, 1600);
 })();
