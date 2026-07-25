@@ -32,9 +32,10 @@
   portal.innerHTML = '<video muted playsinline preload="auto" ' +
     'poster="assets/demos/welcome-poster.jpg"></video>' +
     '<div class="pcap"></div><button class="replay" title="replay">&#8635;</button>';
-  // vertical reels shown on the social-media waypoint: click one to play it,
-  // click again to pause. Sound is on, and starting one stops the other.
+  // reels for the social-media waypoint - hidden until summoned by their key,
+  // so the origami scene (which is itself the proof) is never covered
   var reels = document.createElement('div'); reels.className = 'reels';
+  var reelkeys = document.createElement('div'); reelkeys.className = 'reelkeys';
   var rail = document.createElement('div'); rail.className = 'rail';
   var clock = document.createElement('div'); clock.className = 'clock'; clock.textContent = '0:00';
   var cue = document.createElement('div'); cue.className = 'cue';
@@ -42,7 +43,7 @@
   var help = document.createElement('div'); help.className = 'help';
   var langBtn = document.createElement('button'); langBtn.className = 'lang';
   root.appendChild(layerStills); root.appendChild(layerVideo); root.appendChild(copyEl);
-  root.appendChild(portal); root.appendChild(reels);
+  root.appendChild(portal); root.appendChild(reels); root.appendChild(reelkeys);
   root.appendChild(rail); root.appendChild(clock);
   root.appendChild(cue); root.appendChild(wpnum); root.appendChild(help);
   root.appendChild(langBtn);
@@ -136,7 +137,7 @@
       html += '<div class="qrcard"><img src="assets/qr.png" alt="QR">' +
         '<div><div class="q1">' + (lang === 'mr' ? 'हा प्रवास सोबत न्या' : 'Take this journey home') + '</div>' +
         '<div class="q2">' + (lang === 'mr' ? 'QR स्कॅन करा किंवा भेट द्या' : 'Scan the QR or visit') + '</div>' +
-        '<div class="q3">ai.jarvisdaily.com</div></div></div>';
+        '<div class="q3">tranquilvedapvtltd.github.io/ai-workshop</div></div></div>';
     }
     if (t.byline) html += '<p class="byline">' + esc(t.byline) + '</p>';
     copyEl.classList.remove('in');
@@ -166,36 +167,37 @@
     }
   }
 
-  // ---- reels panel -------------------------------------------------------
-  // Built once per waypoint that declares `reels`. Deliberately click-to-play
-  // rather than autoplay: the presenter talks over this slide first and starts
-  // a reel when ready, and two reels autoplaying together would collide.
-  var reelsFor = null;
-  function renderReels(w) {
-    if (!w.reels) { reels.classList.remove('show'); reels.innerHTML = ''; reelsFor = null; return; }
-    if (reelsFor !== w) {
-      reels.innerHTML = w.reels.map(function (r) {
-        return '<figure class="reel"><video src="' + r.src + '" playsinline preload="metadata"></video>' +
-               '<figcaption>' + esc(r.cap || '') + '</figcaption>' +
-               '<span class="rplay">&#9654;</span></figure>';
-      }).join('');
-      Array.prototype.forEach.call(reels.querySelectorAll('.reel'), function (fig) {
-        fig.addEventListener('click', function (e) {
-          e.stopPropagation();
-          var v = fig.querySelector('video');
-          Array.prototype.forEach.call(reels.querySelectorAll('video'), function (o) {
-            if (o !== v) { o.pause(); o.parentNode.classList.remove('playing'); }
-          });
-          if (v.paused) { v.play(); fig.classList.add('playing'); }
-          else { v.pause(); fig.classList.remove('playing'); }
-        });
-        fig.querySelector('video').addEventListener('ended', function () {
-          fig.classList.remove('playing');
-        });
-      });
-      reelsFor = w;
-    }
+  // ---- reels overlay -----------------------------------------------------
+  // The origami art on this waypoint IS the argument ("Claude Code made all of
+  // this"), so nothing is allowed to sit on top of it by default. A reel is
+  // summoned by its own key (Z / X), plays full-height over a dimmed backdrop,
+  // and Escape / click returns the slide to its untouched state.
+  function reelHint(w) {
+    if (!w.reels) return '';
+    return w.reels.map(function (r) { return r.key.toUpperCase(); }).join(' / ') + ' — reels';
+  }
+  function closeReel() {
+    var v = reels.querySelector('video');
+    if (v) { v.pause(); }
+    reels.classList.remove('show');
+    setTimeout(function () { if (!reels.classList.contains('show')) reels.innerHTML = ''; }, 420);
+  }
+  function openReel(r) {
+    reels.innerHTML = '<div class="reelback"></div>' +
+      '<figure class="reel"><video src="' + r.src + '" playsinline></video>' +
+      '<figcaption>' + esc(r.cap || '') + '</figcaption></figure>';
+    reels.querySelector('.reelback').addEventListener('click', closeReel);
+    var v = reels.querySelector('video');
+    v.addEventListener('click', function () { if (v.paused) v.play(); else v.pause(); });
     reels.classList.add('show');
+    // a keypress is a user gesture, so sound is allowed here
+    v.muted = false;
+    var p = v.play(); if (p && p.catch) p.catch(function () {});
+  }
+  function renderReels(w) {
+    if (!w.reels) { closeReel(); reelkeys.classList.remove('show'); return; }
+    reelkeys.textContent = reelHint(w);
+    reelkeys.classList.add('show');
   }
 
   // A film that carries sound cannot autoplay before the page has had a user
@@ -300,6 +302,17 @@
   function prev() { go(current - 1); }
   document.addEventListener('keydown', function (e) {
     var k = e.key;
+    // reels overlay first: while one is open the arrows must not skip the slide
+    if (reels.classList.contains('show')) {
+      if (k === 'Escape' || k === 'ArrowRight' || k === 'ArrowDown' || k === ' ' ||
+          k === 'ArrowLeft' || k === 'ArrowUp') { e.preventDefault(); closeReel(); return; }
+    }
+    var w = WP[current];
+    if (w && w.reels) {
+      var hit = null;
+      w.reels.forEach(function (r) { if (r.key === k.toLowerCase()) hit = r; });
+      if (hit) { e.preventDefault(); openReel(hit); return; }
+    }
     if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ') { e.preventDefault(); next(); }
     else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); prev(); }
     else if (k === 'Home') { go(0); }
