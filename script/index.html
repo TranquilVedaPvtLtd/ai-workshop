@@ -13,34 +13,34 @@
         --sans:'Noto Sans Devanagari',-apple-system,'Segoe UI',Roboto,sans-serif;
         --serif:'Noto Serif Devanagari',Georgia,serif}
   *{margin:0;padding:0;box-sizing:border-box}
-  body{background:var(--bg);color:var(--ink);font:17px/1.65 var(--sans);
+  body{background:var(--bg);color:var(--ink);font:25px/1.6 var(--sans);
        padding:0 0 30vh;-webkit-font-smoothing:antialiased}
   header{position:sticky;top:0;z-index:10;background:rgba(18,19,26,.94);
     backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:14px 26px;
     display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-  header h1{font:600 17px/1.2 var(--sans);letter-spacing:.02em}
-  header .meta{color:var(--dim);font-size:13.5px}
-  header .clock{margin-left:auto;font-variant-numeric:tabular-nums;font-size:15px;
+  header h1{font:600 22px/1.2 var(--sans);letter-spacing:.02em}
+  header .meta{color:var(--dim);font-size:17px}
+  header .clock{margin-left:auto;font-variant-numeric:tabular-nums;font-size:21px;
     color:var(--gold);cursor:pointer;user-select:none;border:1px solid var(--line);
     padding:5px 12px;border-radius:8px}
-  main{max-width:900px;margin:0 auto;padding:26px}
+  main{max-width:1180px;margin:0 auto;padding:26px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;
-    padding:22px 26px 24px;margin-bottom:18px;scroll-margin-top:78px}
+    padding:28px 34px 30px;margin-bottom:22px;scroll-margin-top:92px}
   .card.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
   .top{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
-  .num{font:700 13px/1 var(--sans);color:#12131A;background:var(--gold);
+  .num{font:700 19px/1 var(--sans);color:#12131A;background:var(--gold);
     border-radius:6px;padding:6px 9px;letter-spacing:.04em}
-  .screen{font:600 14px/1.4 var(--sans);color:var(--dim)}
-  h2{font:600 clamp(1.35rem,2.4vw,1.75rem)/1.3 var(--serif);margin:10px 0 14px}
-  .say{font-size:clamp(1.05rem,1.7vw,1.28rem);line-height:1.7;margin:0 0 10px;
-    padding-left:16px;border-left:3px solid var(--rose)}
+  .screen{font:600 20px/1.4 var(--sans);color:var(--dim)}
+  h2{font:600 clamp(2rem,3.4vw,2.6rem)/1.25 var(--serif);margin:14px 0 20px}
+  .say{font-size:clamp(1.55rem,2.4vw,1.92rem);line-height:1.62;margin:0 0 16px;
+    padding-left:20px;border-left:4px solid var(--rose)}
   .say b{color:var(--gold);font-weight:600}
-  .do{margin-top:14px;font-size:14.5px;color:var(--green);
+  .do{margin-top:18px;font-size:21px;color:var(--green);
     background:rgba(127,191,127,.09);border:1px dashed rgba(127,191,127,.34);
     border-radius:10px;padding:10px 14px}
   .do::before{content:'▶ ';opacity:.8}
-  .beat{margin-top:10px;font-size:13.5px;color:var(--dim);font-style:italic}
-  footer{max-width:900px;margin:0 auto;padding:0 26px;color:var(--dim);font-size:14px}
+  .beat{margin-top:14px;font-size:20px;color:var(--dim);font-style:italic}
+  footer{max-width:1180px;margin:0 auto;padding:0 26px;color:var(--dim);font-size:19px}
   @media (max-width:640px){main{padding:16px}.card{padding:18px}}
 </style>
 </head>
@@ -58,6 +58,8 @@
   <p class="say">व्हिडिओ संपल्यावर, शांतपणे: “आत्ता तुम्ही जिला बघितलंत — <b>ती खरी व्यक्ती नाही.</b>”</p>
   <p class="say">“तो आवाज पण खरा नाही. तो व्हिडिओ, ते म्युझिक, हे पूर्ण presentation — <b>सगळं AI ने बनवलंय.</b>”</p>
   <p class="say">“मी श्रियावल्लभ. पुढच्या तासाभरात हेच तुम्हाला दाखवणार आहे — <b>फ्री, आणि तुमच्या फोनवर.</b>”</p>
+  <p class="say">“आणि हो — मी हे सांगतोय म्हणून घाबरू नका. <b>उलट, ही तुमच्यासाठी सगळ्यात मोठी संधी आहे.</b>”</p>
+  <p class="say">“आज मी तुम्हाला theory शिकवणार नाही. <b>प्रत्यक्ष स्क्रीनवर करून दाखवणार आहे</b> — जे तुम्ही आज संध्याकाळी करू शकाल.”</p>
   <div class="do">Zoom मध्ये Share Screen करताना <b>“Share sound”</b> टिक करा — नाहीतर व्हिडिओचा आवाज लोकांना ऐकू येणार नाही.</div>
   <div class="beat">इथे २ सेकंद थांबा. हा surprise हाच तुमचा सर्वात मोठा hook आहे.</div>
 </div>
@@ -68,6 +70,8 @@
   <p class="say">“शंभर वर्षांपूर्वी वीज आली. तेव्हा लोक म्हणाले — आमच्या आजोबांचं काम विजेशिवाय चाललं, आमचंही चालेल.”</p>
   <p class="say">“आज विजेशिवाय एक दिवस काढून बघा. <b>AI पण तशीच गोष्ट आहे.</b>”</p>
   <p class="say">“फरक एकच — विजेला घरात यायला ५० वर्षं लागली. <b>AI ला ५ वर्षं लागली. आणि ती आधीच तुमच्या मोबाईलमध्ये आहे.</b>”</p>
+  <p class="say">“आणि मजा अशी की — वीज वापरायला तुम्हाला engineer व्हावं लागलं नाही. <b>फक्त स्विच दाबायला शिकलात.</b>”</p>
+  <p class="say">“AI पण तसंच. Coding शिकायची गरज नाही. <b>फक्त बोलायला यायला हवं — आणि ते तुम्हाला येतंच.</b>”</p>
 </div>
 
 <div class="card" id="s3">
@@ -76,6 +80,8 @@
   <p class="say">“मी वाक्य सुरू करतो — ‘आज हवामान...’ तुमच्या मनात लगेच पुढचा शब्द आला ना?”</p>
   <p class="say">“<b>AI हेच करतो.</b> फक्त त्याने कोट्यवधी वाक्यं वाचून ठेवली आहेत, म्हणून तो जास्त अचूक ओळखतो.”</p>
   <p class="say">“एवढंच. ना maths, ना magic. आणि पुढचं सगळं याच एका गोष्टीतून येतं.”</p>
+  <p class="say">“म्हणून तो कधी कधी चुकतोही — कारण तो ओळखतोय, आठवत नाहीये.”</p>
+  <p class="say">“हे लक्षात ठेवा, पुढे उपयोगी पडेल — <b>AI हुशार आहे, पण देव नाही.</b> तपासून घ्यायचं.”</p>
   <div class="beat">हे सांगितलं की भीती निघून जाते. आवाजात हलकेपणा ठेवा.</div>
 </div>
 
@@ -85,6 +91,8 @@
   <p class="say">“तुमच्या WhatsApp मध्ये तो निळा गोल दिसतो का? तो AI आहे.”</p>
   <p class="say">“YouTube तुम्हाला हवे तेच व्हिडिओ दाखवतो — AI. Google Lens फोटोतून translate करतो — AI. Google Maps ट्रॅफिक सांगतो — AI.”</p>
   <p class="say">“म्हणजे ‘AI वापरायचा का’ हा प्रश्नच नाही. प्रश्न आहे — <b>तुम्ही तो ठरवून वापरणार का?</b>”</p>
+  <p class="say">“म्हणजे तुम्ही रोज AI वापरताच आहात. फक्त कळत नाही.”</p>
+  <p class="say">“फरक एवढाच — आतापर्यंत AI तुमच्यासाठी ठरवत होता. <b>आजपासून तुम्ही AI ला सांगणार आहात.</b>”</p>
 </div>
 
 <div class="card" id="s5">
@@ -93,6 +101,9 @@
   <p class="say">“आता मी माझी स्क्रीन दाखवतो. जे दिसेल ते आज संध्याकाळी तुम्ही स्वतः करू शकता.”</p>
   <p class="say">Excel दाखवताना: “हा एका दुकानाचा वर्षभराचा हिशोब — <b>१,७८९ ओळी.</b> हे CA कडे गेलं तर दोन दिवस.”</p>
   <p class="say">उत्तर दाखवताना: “<b>बारा सेकंद.</b> graph, नफा, कोणतं शहर, कोणता salesman — सगळं तयार.”</p>
+  <p class="say">“आणि हे सगळं मराठीत विचारलं तरी चालतं. <b>English यायलाच हवं असं काही नाही.</b>”</p>
+  <p class="say">“LOGO बघा — एका दुकानदाराला designer कडे जायचं तर ५ हजार आणि ३ दिवस. इथे <b>२ मिनिटं.</b>”</p>
+  <p class="say">“आणि Tasks — रोज सकाळी ८ वाजता तो स्वतः message पाठवेल. <b>एकदा सांगायचं, पुढे तो लक्षात ठेवतो.</b>”</p>
   <div class="do">Tab क्रम: फोटो → LOGO → Excel → Tasks. सगळी उत्तरं आधीच तयार आहेत — फक्त tab बदला.</div>
   <div class="beat">प्रत्येक demo नंतर एक ओळ: “हे तुमच्या धंद्यात उद्या वापरता येईल.”</div>
 </div>
@@ -103,6 +114,8 @@
   <p class="say">“आता typing पण नको — नुसतं बोला.” <i>(फोन दाखवा, Voice सुरू करा)</i></p>
   <p class="say">“तो शिकवतो, प्रश्न विचारतो, समजलं नाही तर पुन्हा समजावतो. <b>आणि दहाव्यांदा विचारलं तरी चिडत नाही.</b>”</p>
   <p class="say">“मुलांचा अभ्यास, स्पर्धा परीक्षा, नवीन skill — क्लासची फी शून्य.”</p>
+  <p class="say">“माझ्या ओळखीचे काका ६२ वर्षांचे आहेत — ते रोज याच्याशी बोलून English शिकतायत.”</p>
+  <p class="say">“लाज वाटायचं कारण नाही, कोणी बघत नाहीये. <b>आणि तो कधीच judge करत नाही.</b>”</p>
   <div class="do">फोनवर live demo — मराठीत एक प्रश्न विचारा.</div>
 </div>
 
@@ -112,6 +125,9 @@
   <p class="say">“एक अडचण सांगतो — AI कधी कधी confident आवाजात चुकीचं सांगतो. मग विश्वास कसा ठेवायचा?”</p>
   <p class="say">“सोपा उपाय — <b>त्याला फक्त तुमचाच कागद द्या.</b>” <i>(भाडेकरार upload करा)</i></p>
   <p class="say">“बघा — प्रत्येक उत्तरापुढे कागदातली नेमकी ओळ दाखवतो. <b>बाहेरचं काहीही आणत नाही.</b>”</p>
+  <p class="say">“शेतकरी योजनेचं माहितीपत्रक, विमा पॉलिसी, बँकेचे कागद, कोर्टाचे कागद — सगळं इथे टाकता येतं.”</p>
+  <p class="say">“आणि सगळ्यात भारी — <b>तुमच्याच कागदावरून तो दोन माणसांचा podcast बनवतो.</b> ऐकत ऐकत समजून घ्या.”</p>
+  <p class="say">“हे Google चं आहे, आणि पूर्णपणे <b>फ्री</b> आहे.”</p>
   <div class="do">Audio Overview वाजवा — २० सेकंद पुरे. (Zoom मध्ये “Share sound” चालू हवं.)</div>
 </div>
 
@@ -121,6 +137,9 @@
   <p class="say">“हे पूर्ण presentation — प्रत्येक चित्र, प्रत्येक scene, सुरुवातीची श्रुती — <b>AI ने बनवलं.</b> designer नाही, camera नाही, shooting नाही.”</p>
   <p class="say">Z दाबा: “हा shampoo चा ad. <b>ना camera, ना model, ना studio.</b>”</p>
   <p class="say">X दाबा: “आणि हा personal brand reel. आता विचार करा — एका ad ला किती खर्च येतो? आणि इथे किती?”</p>
+  <p class="say">“आणि हे मी एका रात्रीत बनवलं. <b>टीम नाही, एजन्सी नाही.</b>”</p>
+  <p class="say">“विचार करा — तुमच्या दुकानाची, hospital ची, class ची जाहिरात अशी बनली तर?”</p>
+  <p class="say">“<b>हेच आम्ही व्यवसायांसाठी करतो.</b> पण आज तुम्हाला हे स्वतः करता येईल एवढं दाखवतोय.”</p>
   <div class="do"><b>Z</b> = reel १, <b>X</b> = reel २, <b>Esc</b> = बंद. आवाजासाठी “Share sound” लागेल.</div>
 </div>
 
@@ -130,6 +149,8 @@
   <p class="say">“आतापर्यंत आपण विचारायचो, तो सांगायचा. आता पुढची पायरी — <b>तो स्वतः काम करतो.</b>”</p>
   <p class="say">“माझ्या WhatsApp मध्ये एक agent बसलाय. messages वाचतो, उत्तरं देतो, meetings ठरवतो, सकाळी मला दिवसाचा plan पाठवतो.”</p>
   <p class="say">“<b>मी झोपलेला असतो तेव्हाही तो काम करत असतो.</b>”</p>
+  <p class="say">“सकाळी उठल्यावर मला एक message येतो — आज काय महत्त्वाचं आहे, कोणाला उत्तर द्यायचंय, काय राहिलंय.”</p>
+  <p class="say">“<b>हा फरक आहे — ChatGPT उत्तर देतो, agent काम करतो.</b> आणि इथेच खरा पैसा वाचतो.”</p>
 </div>
 
 <div class="card" id="s10">
@@ -138,6 +159,8 @@
   <p class="say">“नवीन customers शोधणं — lists आपोआप तयार होतात.”</p>
   <p class="say">“हिशोब, invoice, GST ची तयारी — तासांचं काम मिनिटांत.”</p>
   <p class="say">“आणि customer चा प्रश्न रात्री बाराला आला तरी उत्तर जातं. <b>माणूस झोपतो, agent झोपत नाही.</b>”</p>
+  <p class="say">“एक उदाहरण — एका बिल्डरचे ग्राहकांचे प्रश्न रात्री येतात. आता agent उत्तर देतो, सकाळी तो फक्त बघतो.”</p>
+  <p class="say">“दुकानदार असाल, डॉक्टर असाल, class चालवत असाल — <b>प्रत्येक धंद्यात हे बसतं.</b>”</p>
 </div>
 
 <div class="card" id="s11">
@@ -146,6 +169,8 @@
   <p class="say">“आवाजाची हुबेहूब नक्कल होते. मुलाच्या आवाजात फोन येतो — ‘बाबा, अर्जंट पैसे पाठवा.’ <b>तो आवाज खोटा असू शकतो.</b>”</p>
   <p class="say">“एक नियम लक्षात ठेवा — <b>जो फोन घाई करायला लावतो, तो संशयास्पद.</b> फोन ठेवा, आणि स्वतः परत लावा.”</p>
   <p class="say">“आणि OTP किंवा बँकेची माहिती कोणत्याही chatbot ला देऊ नका. कधीच नाही.”</p>
+  <p class="say">“फोटो आणि व्हिडिओ पण खोटे बनतात — deepfake. त्यामुळे WhatsApp वर आलेलं सगळंच खरं मानू नका.”</p>
+  <p class="say">“<b>हे घरी नक्की सांगा</b> — विशेषतः आई-वडिलांना आणि आजी-आजोबांना. हीच आजची खरी जनसेवा.”</p>
   <div class="beat">आवाज खाली आणा, थोडं हळू बोला. हा भाग गंभीरपणे सांगायचा आहे.</div>
 </div>
 
@@ -155,6 +180,8 @@
   <p class="say">“आज ऐकलेलं ९०% लोक उद्या विसरतात. तुम्ही विसरू नये म्हणून एक सोपं challenge.”</p>
   <p class="say">“<b>रोज फक्त एकच काम AI कडून करून घ्या.</b> उद्या एक पत्र. परवा एक फोटो. तिसऱ्या दिवशी बोलून काहीतरी शिका.”</p>
   <p class="say">“सात दिवसांत सवय लागते. आणि एकदा सवय लागली की मागे फिरता येत नाही.”</p>
+  <p class="say">“मोठं काही करायचं नाही. <b>रोज एक छोटं काम.</b> दहा मिनिटं पुरे.”</p>
+  <p class="say">“सातव्या दिवशी तुम्हाला जाणवेल — आता याच्याशिवाय काम करायला नको वाटतंय.”</p>
 </div>
 
 <div class="card" id="s13">
@@ -163,6 +190,9 @@
   <p class="say">“<b>ही लिंक मी आत्ता chat मध्ये टाकतोय.</b> हे पूर्ण presentation, सगळे tools, आणि ७ दिवसांचं challenge — सगळं इथे राहील.”</p>
   <p class="say">“आज ऐकलेलं विसरलात तरी चालेल — <b>ही लिंक हरवत नाही.</b> आणि हवं तेव्हा पुन्हा बघा, मित्रांना पाठवा.”</p>
   <p class="say">“आणि हे सगळं तुमच्या धंद्यात बसवायचं असेल तर आम्ही आहोत. एवढाच प्रश्न घेऊन या — <b>‘माझ्या business मध्ये AI कुठून सुरू करू?’</b> बाकी आम्ही बघतो.”</p>
+  <p class="say">“ही लिंक तुमच्या ओळखीच्यांना पण पाठवा. <b>जे आज आले नाहीत त्यांनाही हे मिळू दे.</b>”</p>
+  <p class="say">“आणि लक्षात ठेवा — <b>AI तुमची जागा घेणार नाही. पण AI वापरणारा माणूस घेईल.</b>”</p>
+  <p class="say">“धन्यवाद! आणि आयोजकांचे विशेष आभार.”</p>
   <div class="do">लिंक Zoom chat मध्ये paste करा — आणि तोंडी पण एकदा सांगा.</div>
   <div class="beat">आभार माना. energy शेवटपर्यंत उंच ठेवा — शेवटचं वाक्य हसून संपवा.</div>
 </div>
