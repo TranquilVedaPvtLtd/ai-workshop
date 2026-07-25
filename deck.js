@@ -84,6 +84,8 @@ window.DECK = {
     },
     {
       pos: { leg: 7, t: 1 }, scene: 8, accent: '#C2447E',
+      reels: [{ src: 'assets/demos/reel1.mp4', cap: 'Reel १' },
+              { src: 'assets/demos/reel2.mp4', cap: 'Reel २' }],
       mr: { chip: 'AI निर्माण करतो', head: 'हे संपूर्ण presentation Claude Code ने बनवलं आहे.',
         sub: 'प्रत्येक चित्र, प्रत्येक दृश्य, हा संपूर्ण कागदी प्रवास — आणि हो, सुरुवातीची श्रुती सुद्धा.',
         receipt: ['LinkedIn पोस्ट, Reels — संपूर्ण social media आपोआप', 'Client साठी cinematic proposals — प्रत्यक्ष उदाहरण पाहू', 'अशा cinematic websites सुद्धा — ही website स्वतःच त्याचं उदाहरण'],

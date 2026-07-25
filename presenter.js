@@ -32,6 +32,9 @@
   portal.innerHTML = '<video muted playsinline preload="auto" ' +
     'poster="assets/demos/welcome-poster.jpg"></video>' +
     '<div class="pcap"></div><button class="replay" title="replay">&#8635;</button>';
+  // vertical reels shown on the social-media waypoint: click one to play it,
+  // click again to pause. Sound is on, and starting one stops the other.
+  var reels = document.createElement('div'); reels.className = 'reels';
   var rail = document.createElement('div'); rail.className = 'rail';
   var clock = document.createElement('div'); clock.className = 'clock'; clock.textContent = '0:00';
   var cue = document.createElement('div'); cue.className = 'cue';
@@ -39,7 +42,8 @@
   var help = document.createElement('div'); help.className = 'help';
   var langBtn = document.createElement('button'); langBtn.className = 'lang';
   root.appendChild(layerStills); root.appendChild(layerVideo); root.appendChild(copyEl);
-  root.appendChild(portal); root.appendChild(rail); root.appendChild(clock);
+  root.appendChild(portal); root.appendChild(reels);
+  root.appendChild(rail); root.appendChild(clock);
   root.appendChild(cue); root.appendChild(wpnum); root.appendChild(help);
   root.appendChild(langBtn);
 
@@ -140,6 +144,7 @@
     dots.forEach(function (d, k) { d.className = 'dot' + (k === i ? ' on' : k < i ? ' done' : ''); });
     setAccent(w.accent || '#D97B29');
     cue.textContent = t.cue || '';
+    renderReels(w);
     wpnum.textContent = (i + 1) + ' / ' + WP.length;
 
     // portal (demo film / welcome film)
@@ -159,6 +164,38 @@
       portal.style.pointerEvents = 'none';
       try { pvid.pause(); } catch (e) {}
     }
+  }
+
+  // ---- reels panel -------------------------------------------------------
+  // Built once per waypoint that declares `reels`. Deliberately click-to-play
+  // rather than autoplay: the presenter talks over this slide first and starts
+  // a reel when ready, and two reels autoplaying together would collide.
+  var reelsFor = null;
+  function renderReels(w) {
+    if (!w.reels) { reels.classList.remove('show'); reels.innerHTML = ''; reelsFor = null; return; }
+    if (reelsFor !== w) {
+      reels.innerHTML = w.reels.map(function (r) {
+        return '<figure class="reel"><video src="' + r.src + '" playsinline preload="metadata"></video>' +
+               '<figcaption>' + esc(r.cap || '') + '</figcaption>' +
+               '<span class="rplay">&#9654;</span></figure>';
+      }).join('');
+      Array.prototype.forEach.call(reels.querySelectorAll('.reel'), function (fig) {
+        fig.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var v = fig.querySelector('video');
+          Array.prototype.forEach.call(reels.querySelectorAll('video'), function (o) {
+            if (o !== v) { o.pause(); o.parentNode.classList.remove('playing'); }
+          });
+          if (v.paused) { v.play(); fig.classList.add('playing'); }
+          else { v.pause(); fig.classList.remove('playing'); }
+        });
+        fig.querySelector('video').addEventListener('ended', function () {
+          fig.classList.remove('playing');
+        });
+      });
+      reelsFor = w;
+    }
+    reels.classList.add('show');
   }
 
   // A film that carries sound cannot autoplay before the page has had a user
