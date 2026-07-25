@@ -137,7 +137,7 @@
       html += '<div class="qrcard"><img src="assets/qr.png" alt="QR">' +
         '<div><div class="q1">' + (lang === 'mr' ? 'हा प्रवास सोबत न्या' : 'Take this journey home') + '</div>' +
         '<div class="q2">' + (lang === 'mr' ? 'QR स्कॅन करा किंवा भेट द्या' : 'Scan the QR or visit') + '</div>' +
-        '<div class="q3">tranquilvedapvtltd.github.io/ai-workshop</div></div></div>';
+        '<div class="q3">jarvisdaily.com/workshop</div></div></div>';
     }
     if (t.byline) html += '<p class="byline">' + esc(t.byline) + '</p>';
     copyEl.classList.remove('in');
