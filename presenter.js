@@ -284,7 +284,9 @@
   }
   var coachTimer = null;
   function showCoach() {
-    if (!TOUCH) return;
+    // Only the portrait phone layout has a reserved slot for it; on a landscape
+    // tablet it would graze the portal, and the labelled arrow is hint enough.
+    if (!TOUCH || !window.matchMedia('(max-width: 820px) and (orientation: portrait)').matches) return;
     coach.classList.add('show');
     coachTimer = setTimeout(hideCoach, 8000);
   }
