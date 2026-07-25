@@ -22,6 +22,17 @@
   var vids = [];
   var animating = false;
   var startedAt = null;
+  var loadedLegs = 0;
+
+  // A phone pays for every byte and stalls on parallel video fetches: the desktop
+  // path pulls ~32 MB of legs in 13 concurrent requests plus a 21 MB welcome film,
+  // which saturates a 4G link for around a minute and leaves the deck looking
+  // frozen. The stills ARE the approved frames of those same legs, and go()
+  // already falls back to an instant still swap, so small screens present
+  // stills-first and let the motion arrive behind them.
+  var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {};
+  var SAVE_DATA = conn.saveData === true || /(^|-)2g$/.test(conn.effectiveType || '');
+  var LIGHT = SAVE_DATA || window.matchMedia('(max-width: 820px)').matches;
 
   // ---------- dom ----------
   var root = document.getElementById('stage');
@@ -29,7 +40,9 @@
   var layerVideo = document.createElement('div'); layerVideo.className = 'layer';
   var copyEl = document.createElement('div'); copyEl.className = 'copy';
   var portal = document.createElement('div'); portal.className = 'portal';
-  portal.innerHTML = '<video muted playsinline preload="auto" ' +
+  // preload=none on small screens: the welcome film is 21 MB and would otherwise
+  // download before anything else can. The poster stands in until it is tapped.
+  portal.innerHTML = '<video muted playsinline preload="' + (LIGHT ? 'none' : 'auto') + '" ' +
     'poster="assets/demos/welcome-poster.jpg"></video>' +
     '<div class="pcap"></div><button class="replay" title="replay">&#8635;</button>';
   // reels for the social-media waypoint - hidden until summoned by their key,
@@ -76,25 +89,39 @@
   });
 
   // ---------- video loading (blob for guaranteed seekability) ----------
+  function attachLeg(i, blob) {
+    var v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'auto';
+    v.src = URL.createObjectURL(blob);
+    v.className = 'leg'; v.style.opacity = 0;
+    layerVideo.appendChild(v); vids[i] = v;
+    loadedLegs++;
+    // Tweening BETWEEN waypoints needs the whole chain, so videosReady still
+    // means "all legs present". A leg that has just landed, though, should show
+    // straight away if we happen to be standing on it.
+    if (loadedLegs === LEGS.length) videosReady = true;
+    if (WP[current].pos.leg === i) syncToWaypoint(current, true);
+  }
+  function fetchLeg(i) {
+    return fetch(LEGS[i]).then(function (r) {
+      if (!r.ok) throw new Error('missing');
+      return r.blob();
+    }).then(function (b) {
+      attachLeg(i, b);
+    }).catch(function () { /* stills-only mode still presents */ });
+  }
   function loadVideos() {
-    var loaded = 0, failed = false;
-    LEGS.forEach(function (src, i) {
-      fetch(src).then(function (r) {
-        if (!r.ok) throw new Error('missing');
-        return r.blob();
-      }).then(function (b) {
-        var v = document.createElement('video');
-        v.muted = true; v.playsInline = true; v.preload = 'auto';
-        v.src = URL.createObjectURL(b);
-        v.className = 'leg'; v.style.opacity = 0;
-        layerVideo.appendChild(v); vids[i] = v;
-        loaded++;
-        if (loaded === LEGS.length && !failed) {
-          videosReady = true;
-          syncToWaypoint(current, true);
-        }
-      }).catch(function () { failed = true; /* stills-only mode still presents */ });
-    });
+    // Save-Data or 2G: never spend 32 MB of someone's plan on decoration.
+    if (SAVE_DATA) return;
+    if (!LIGHT) { LEGS.forEach(function (_, i) { fetchLeg(i); }); return; }
+    // Phones: one leg at a time, so the stills and copy are never queued behind
+    // a dozen video downloads. Start from the leg we are actually standing on.
+    var order = LEGS.map(function (_, i) { return i; })
+      .sort(function (a, b) { return Math.abs(a - WP[current].pos.leg) - Math.abs(b - WP[current].pos.leg); });
+    (function nextLeg() {
+      if (!order.length) return;
+      fetchLeg(order.shift()).then(nextLeg);
+    })();
   }
 
   // ---------- rendering ----------
@@ -102,7 +129,8 @@
     stillEls.forEach(function (el, i) { el.style.opacity = i === idx ? 1 : 0; });
   }
   function setChain(pos) {
-    if (!videosReady) return;
+    // No videosReady gate: legs arrive one at a time on phones, and any that is
+    // present should be positioned. Missing ones are skipped and the still shows.
     vids.forEach(function (v, i) {
       if (!v) return;
       if (i === pos.leg) {
